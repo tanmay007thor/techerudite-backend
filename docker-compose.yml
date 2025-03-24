@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  database:
+    image: postgres:latest
+    container_name: postgres-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Thor#007  
+      POSTGRES_DB: TecherUdite
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      retries: 5
+      timeout: 5s
+
+  backend:
+    build: .
+    container_name: backend-container
+    restart: always
+    depends_on:
+      database:
+        condition: service_healthy   
+    environment:
+      PORT: 5000
+      DATABASE_URL: "postgres://postgres:Thor#007@database:5432/TecherUdite"
+      JWT_SECRET: "your_super_secret_key"
+      EMAIL_USER: "tanmayrathod777@gmail.com"
+      EMAIL_PASS: "cmrujgzzmqixxkln"
+      FRONTEND_URL: "http://localhost:5173/"
+    ports:
+      - "5000:5000"
+    command: ["npm", "start"]
+
+volumes:
+  postgres_data:

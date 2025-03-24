@@ -1,0 +1,76 @@
+pipeline {
+    agent any
+
+    environment {
+        DEV_DB_URL = "postgres://postgres:Thor#007@database:5432/TecherUdite"
+        STAGING_DB_URL = "postgres://staging_user:staging_pass@database:5432/StagingDB"
+        PROD_DB_URL = "postgres://prod_user:prod_pass@database:5432/ProdDB"
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                script {
+                    echo "Cloning repository..."
+                    checkout scm
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    echo "Building Docker Image..."
+                    sh 'docker build -t my-backend-app .'
+                }
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                script {
+                    echo "Running tests..."
+                    sh 'docker run --rm my-backend-app npm test'
+                }
+            }
+        }
+
+        stage('Deploy to Dev') {
+            steps {
+                script {
+                    echo "Deploying to Development..."
+                    sh 'docker-compose up -d'
+                }
+            }
+        }
+
+        stage('Deploy to Staging') {
+            when { branch 'staging' }
+            steps {
+                script {
+                    echo "Deploying to Staging..."
+                    sh 'docker-compose -f docker-compose.yml up -d'
+                }
+            }
+        }
+
+        stage('Deploy to Production') {
+            when { branch 'main' }
+            steps {
+                script {
+                    echo "Deploying to Production..."
+                    sh 'docker-compose -f docker-compose.yml up -d'
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Deployment successful!"
+        }
+        failure {
+            echo "Deployment failed!"
+        }
+    }
+}
